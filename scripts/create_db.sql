@@ -8,17 +8,17 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
--- Schema mydb
+-- Schema caretaker_dev 
 -- -----------------------------------------------------
 
 -- -----------------------------------------------------
--- Schema mydb
+-- Schema caretaker_dev
 -- -----------------------------------------------------
 CREATE DATABASE IF NOT EXISTS `caretaker_dev` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci ;
 USE `caretaker_dev` ;
 
 -- -----------------------------------------------------
--- Table `mydb`.`location`
+-- Table `caretaker_dev`.`location`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `caretaker_dev`.`location` (
   `location_id` INT NOT NULL AUTO_INCREMENT,
@@ -30,7 +30,7 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`caretaker`
+-- Table `caretaker_dev`.`caretaker`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `caretaker_dev`.`caretaker` (
   `caretaker_id` INT NOT NULL AUTO_INCREMENT,
@@ -55,18 +55,20 @@ CREATE TABLE IF NOT EXISTS `caretaker_dev`.`caretaker` (
   `bio` TEXT(1000) NULL,
   `price_range` VARCHAR(45) NOT NULL,
   `pets_allowed` TINYINT(1) NULL DEFAULT 0,
+  `age` INT NOT NULL,
+  `profile_pic` VARCHAR(200),
   PRIMARY KEY (`caretaker_id`),
   INDEX `fk_caretaker_location_idx` (`location_id` ASC),
   CONSTRAINT `fk_caretaker_location`
     FOREIGN KEY (`location_id`)
-    REFERENCES `mydb`.`location` (`location_id`)
+    REFERENCES `caretaker_dev`.`location` (`location_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`customer`
+-- Table `caretaker_dev`.`customer`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `caretaker_dev`.`customer` (
   `customer_id` INT NOT NULL AUTO_INCREMENT,
@@ -81,13 +83,14 @@ CREATE TABLE IF NOT EXISTS `caretaker_dev`.`customer` (
   `language` VARCHAR(45) NOT NULL,
   `location_id` INT NULL,
   `gender` VARCHAR(10) NULL,
-  `profile_pic` VARCHAR(45) NULL,
+  `profile_pic` VARCHAR(200) NULL,
   `email` VARCHAR(45) NOT NULL,
+  `google_id` VARCHAR(30) NOT NULL,
   PRIMARY KEY (`customer_id`),
   INDEX `fk_customer_location1_idx` (`location_id` ASC),
   CONSTRAINT `fk_customer_location1`
     FOREIGN KEY (`location_id`)
-    REFERENCES `mydb`.`location` (`location_id`)
+    REFERENCES `caretaker_dev`.`location` (`location_id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
