@@ -1,7 +1,7 @@
 // set variables for environment
 var express = require('express');
 var path = require('path');
-var http = require('http');
+var http = require('http-request');
 var async = require('async');
 var request = require('request');
 var bodyParser = require('body-parser');
@@ -18,7 +18,8 @@ var x = gAuth();
 // router creation
 var app = express();
 var router = express.Router();
-
+var geoNamesURL = "api.geonames.org/postalCodeLookupJSON";
+var geoNamesUser = "dimyr7";
 // view engine 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -128,11 +129,11 @@ app.post('/', function(req, res){
 		req.checkBody('town', ' Town is required').notEmpty();
 		req.checkBody('state', 'State is required').notEmpty();
 		req.checkBody('zip', 'Zip code is required and numeric').notEmpty().isInt();
-		req.checkBody('zip', 'Distance must be required and numeric').notEmpty().isInt();
+		req.checkBody('distance', 'Distance must be required and numeric').notEmpty().isInt();
 		req.checkBody('language', 'You must provide a seccond language').notEmpty();
+		req.checkBody('experience', 'You must provide experience in numerics').notEmpty().isInt();
 		req.checkBody('email', 'You must provide an email').notEmpty();
 		req.checkBody('price', 'You must provide a numeric price').notEmpty().isInt();
-		console.log(req.body);
 		var errors = req.validationErrors();
 		if (errors) {
 			//console.log(errors);
@@ -144,14 +145,80 @@ app.post('/', function(req, res){
 			getparam: req.params.getparam,
 			postparam: req.params.postparam
 		});
-		res.send('POST request to the homepage');
+		console.log(req.body);
+		var firstName = req.body.first_name;
+		var lastName = req.body.last_name;
+		var age = req.body.age;
+		var town = req.body.town;
+		var state = req.body.state;
+		var zip = req.body.zip;
+		var radius = (req.body.units == 'miles')? req.body.distance : req.body.distance * 1.609;
+		var language = req.body.language;
+		var experience = req.body.experience;
+		var gender = req.body.gender;
+		console.log(req.user.google);
+		var origin = req.body.origin;
+		var google_id = req.user.google.id;
+		var email = req.body.email;
+		var cook = (req.body.cook) ? 1 : 0;
+		var clean = (req.body.clean) ? 1 : 0;
+		var drive = (req.body.drive) ? 1 : 0;
+		var skills = req.body.skills_explained;
+		var bio = req.body.bio;
+		var price = req.body.price;
+		var pets = (req.body.pets) ? 1 : 0;
+		var getRequest = geoNamesURL+"?postalcode="+zip+"&country="+"USA&username="+geoNamesUser;
+		var pic_url = req.user.google.picture;
+		//console.log(getRequest);
+		http.get(getRequest, function(error, result){
+			if (error) {
+				console.error(error);
+				return;
+			}
+
+			var geoJson = JSON.parse(result.buffer.toString()).postalcodes[0];
+			var lat = geoJson.lat;
+			var lon = geoJson.lng;
+			var values = [firstName, lastName, town, state, zip, lat, lon, radius, language, experience, '1', gender, google_id, email, cook, clean, drive, skills, bio, price, pets, origin];
+			console.log(values);
+			var query = "INSERT INTO caretaker (`first_name`, `last_name`, `town`, `state`, `zip`, `x_coord`, `y_coord`, `radius`, `language`, `experience`, `gender`, `google_id`, `email`, `can_cook`, `can_clean`, `can_drive`, `skills_explanation`, `bio`, `price_range`, `pets_allowed`, `origins`, `pic_url`) VALUES ";
+			var midquery = "(\'"+firstName+	"\', \'" +
+								lastName +	"\', \'" + 
+								town + 		"\', \'"+
+								state+		"\', \'"+
+								zip+		"\', \'"+
+								lat+		"\', \'"+
+								lon+		"\', \'"+
+								radius+		"\', \'"+
+								language+	"\', \'"+
+								experience+	"\', \'"+
+								gender+		"\', \'"+
+								google_id+	"\', \'"+
+								email+		"\', \'"+
+								cook+		"\', \'"+
+								clean+		"\', \'"+
+								drive+		"\', \'"+
+								skills+		"\', \'"+
+								bio+		"\', \'"+
+								price+		"\', \'"+
+								pets+		"\', \'"+
+								origin+		"\', \'"+
+								pic_url+ 	"\');" ;
+			console.log(query+midquery);
+			connection.query(query+midquery, function(err){
+				if(err){
+					console.log(err);
+				}
+			});
+		});
+
 	}
 	else{
 		res.redirect('/');
 	}
 });
 
-var server = app.listen(80, function(){
+var server = app.listen(3000, function(){
 	var host = server.address().address;
 	var port = server.address().port;
 	console.log('Listening at http://%s:%s', host, port);

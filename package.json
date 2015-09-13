@@ -27,6 +27,7 @@
     "express-session": "^1.11.3",
     "express-validator": "^2.17.1",
     "http": "0.0.0",
+    "http-request": "^0.7.0",
     "mysql": "^2.9.0",
     "path": "^0.11.14",
     "request": "^2.61.0",
