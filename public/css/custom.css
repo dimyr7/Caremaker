@@ -1,3 +1,13 @@
 .googleName{
 	color: green;
 }
+
+.error{
+    border: solid 1px red;
+    color: red;
+    display: inline-block;
+    border-radius: 5px;
+    padding: 3px;
+    background-color: #ffcccc;
+    margin: 3px;
+}

@@ -13,7 +13,7 @@ connection.query(delete_query, function(err){
 	if(err){
 		console.log("error truncating:" + err.stack);
 		}
-})
+});
 
 var locations = require('./locations.json');
 
@@ -26,4 +26,7 @@ connection.query(insert_query, [locations], function(err){
 });
 
 
+for(var i = 0; i < locations.length; i++){
+	console.log("<option value=\""+locations[i][0]+"\"> "+locations[i][0]+", "+locations[i][1]+"</option>");
+}
 //console.log(locations);
