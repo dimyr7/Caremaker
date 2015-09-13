@@ -172,7 +172,7 @@ app.post('/', function(req, res){
 		var bio = connection.escape(req.body.bio);
 		var price = connection.escape(req.body.price);
 		var pets = (req.body.pets) ? 1 : 0;
-		var getRequest = geoNamesURL+"?postalcode="+zip+"&country="+"USA&username="+geoNamesUser;
+		var getRequest = geoNamesURL+"?postalcode="+zip+"&country=USA&username="+geoNamesUser;
 		var pic_url = connection.escape(req.user.google.picture);
 		//console.log(getRequest);
 		http.get(getRequest, function(error, result){
@@ -271,6 +271,45 @@ app.get('/get/caretaker', function(req ,res){
 		});
 	});
 
+
+});
+
+app.post('/post/customer', function(req, res){
+	var first_name = connection.escape(req.body.first_name);
+	var last_name = connection.escape(req.body.last_name);
+	var age = connection.escape(req.body.age);
+	var town =  connection.escape(req.body.town);
+	var state = connection.escape(req.body.state);
+	var zip = connection.escape(req.body.zip);
+	var language = connection.escape(req.body.language);
+	var gender = connection.escape(req.body.gender);
+	var pic_url = connection.escape(req.body.pic);
+	var email = connection.escape(req.body.email);
+	var google_id = connection.escape(req.body.google);
+
+	var getRequest = geoNamesURL+"?postalcode="+zip+"&country=USA&usename="+geoNamesUser;
+	http.get(getRequest, function(error, result){
+		if(error){
+			console.log(error);
+			return;
+		}
+		var geoJson = JSON.parse(result.buffer.toString()).postalcodes[0];
+		var lat = geoJson.lat;
+		var lon = geoJson.lng;
+		
+		var query = "INSERT INTO `customer` (`first_name`, `last_name`, `age`, `town`, `state`, `zip`, `x_coord`, `y_coord`, `language`, `gender`, `profile_pic`, `email`, `google_id`) VALUES ";
+		var midquery = "("+firstName+", "+lastName+","+age+", "+town+","+state+","+zip+","+lat+","+lon+","+language+","+gender+","+pic_url+","+email+","+google_id+");";
+
+		connection.query(query+midquery, function(err2){
+			if(err2){
+				console.log(err2.stack);
+				return;
+			}
+			res.status(200).send('Yo bitch');
+		});
+
+
+	});
 
 });
 
