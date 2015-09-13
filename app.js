@@ -95,16 +95,18 @@ app.get('/dashboard', function(req, res){
 	if(req.session && req.session.auth && req.session.auth.loggedIn){
 		var google_data = req.user.google;
 		//console.log(google_data);
-		var new_user_query = "SELECT * FROM caretaker WHERE 'google_id'= ?";
+		var new_user_query = "SELECT * FROM caretaker WHERE `google_id`= ?";
 		connection.query(new_user_query, [google_data.id], function(err, result){
 			if(err){
 				console.log("error checking for new user: " + err.stack);
 			}
 			if(result.length === 0){ // new user
+				console.log(result);
+				console.log('wow');
 				res.redirect('new_user');	
 			}
 			else{
-				res.render('contant', {logged_in:false, current: 'contant'});
+				res.render('dashboard', {logged_in:false, current: 'contant', google: google_data});
 			}
 		});
 	}
@@ -146,29 +148,29 @@ app.post('/', function(req, res){
 			postparam: req.params.postparam
 		});
 		console.log(req.body);
-		var firstName = req.body.first_name;
-		var lastName = req.body.last_name;
-		var age = req.body.age;
-		var town = req.body.town;
-		var state = req.body.state;
-		var zip = req.body.zip;
-		var radius = (req.body.units == 'miles')? req.body.distance : req.body.distance * 1.609;
-		var language = req.body.language;
-		var experience = req.body.experience;
-		var gender = req.body.gender;
+		var firstName = connection.escape(req.body.first_name);
+		var lastName = connection.escape(req.body.last_name);
+		var age = connection.escape(req.body.age);
+		var town = connection.escape(req.body.town);
+		var state = connection.escape(req.body.state);
+		var zip = connection.escape(req.body.zip);
+		var radius = (req.body.units == 'miles')? connection.escape(req.body.distance) : connection.escape(req.body.distance * 1.609);
+		var language = connection.escape(req.body.language);
+		var experience = connection.escape(req.body.experience);
+		var gender = connection.escape(req.body.gender);
 		console.log(req.user.google);
-		var origin = req.body.origin;
-		var google_id = req.user.google.id;
-		var email = req.body.email;
+		var origin = connection.escape(req.body.origin);
+		var google_id = connection.escape(req.user.google.id);
+		var email = connection.escape(req.body.email);
 		var cook = (req.body.cook) ? 1 : 0;
 		var clean = (req.body.clean) ? 1 : 0;
 		var drive = (req.body.drive) ? 1 : 0;
-		var skills = req.body.skills_explained;
-		var bio = req.body.bio;
-		var price = req.body.price;
+		var skills = connection.escape(req.body.skills_explained);
+		var bio = connection.escape(req.body.bio);
+		var price = connection.escape(req.body.price);
 		var pets = (req.body.pets) ? 1 : 0;
 		var getRequest = geoNamesURL+"?postalcode="+zip+"&country="+"USA&username="+geoNamesUser;
-		var pic_url = req.user.google.picture;
+		var pic_url = connection.escape(req.user.google.picture);
 		//console.log(getRequest);
 		http.get(getRequest, function(error, result){
 			if (error) {
@@ -182,32 +184,35 @@ app.post('/', function(req, res){
 			var values = [firstName, lastName, town, state, zip, lat, lon, radius, language, experience, '1', gender, google_id, email, cook, clean, drive, skills, bio, price, pets, origin];
 			console.log(values);
 			var query = "INSERT INTO caretaker (`first_name`, `last_name`, `town`, `state`, `zip`, `x_coord`, `y_coord`, `radius`, `language`, `experience`, `gender`, `google_id`, `email`, `can_cook`, `can_clean`, `can_drive`, `skills_explanation`, `bio`, `price_range`, `pets_allowed`, `origins`, `pic_url`) VALUES ";
-			var midquery = "(\'"+firstName+	"\', \'" +
-								lastName +	"\', \'" + 
-								town + 		"\', \'"+
-								state+		"\', \'"+
-								zip+		"\', \'"+
-								lat+		"\', \'"+
-								lon+		"\', \'"+
-								radius+		"\', \'"+
-								language+	"\', \'"+
-								experience+	"\', \'"+
-								gender+		"\', \'"+
-								google_id+	"\', \'"+
-								email+		"\', \'"+
-								cook+		"\', \'"+
-								clean+		"\', \'"+
-								drive+		"\', \'"+
-								skills+		"\', \'"+
-								bio+		"\', \'"+
-								price+		"\', \'"+
-								pets+		"\', \'"+
-								origin+		"\', \'"+
-								pic_url+ 	"\');" ;
+			var midquery = "("+firstName+	", " +
+								lastName +	", " + 
+								town + 		", "+
+								state+		", "+
+								zip+		", "+
+								lat+		", "+
+								lon+		", "+
+								radius+		", "+
+								language+	", "+
+								experience+	", "+
+								gender+		", "+
+								google_id+	", "+
+								email+		", "+
+								cook+		", "+
+								clean+		", "+
+								drive+		", "+
+								skills+		", "+
+								bio+		", "+
+								price+		", "+
+								pets+		", "+
+								origin+		", "+
+								pic_url+ 	");" ;
 			console.log(query+midquery);
 			connection.query(query+midquery, function(err){
 				if(err){
 					console.log(err);
+				}
+				else{
+					res.redirect('/');
 				}
 			});
 		});
