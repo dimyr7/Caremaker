@@ -68,14 +68,11 @@ CREATE TABLE `customer` (
   `x_coord` float NOT NULL,
   `y_coord` float NOT NULL,
   `language` varchar(45) NOT NULL,
-  `location_id` int(11) DEFAULT NULL,
   `gender` varchar(10) DEFAULT NULL,
   `profile_pic` varchar(45) DEFAULT NULL,
   `email` varchar(45) NOT NULL,
   `google_id` varchar(30) NOT NULL,
-  PRIMARY KEY (`customer_id`),
-  KEY `fk_customer_location1_idx` (`location_id`),
-  CONSTRAINT `fk_customer_location1` FOREIGN KEY (`location_id`) REFERENCES `mydb`.`location` (`location_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  PRIMARY KEY (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -88,4 +85,4 @@ CREATE TABLE `customer` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-09-13  1:45:34
+-- Dump completed on 2015-09-13  7:01:26
