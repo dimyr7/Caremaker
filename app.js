@@ -20,6 +20,9 @@ var app = express();
 var router = express.Router();
 var geoNamesURL = "api.geonames.org/postalCodeLookupJSON";
 var geoNamesUser = "dimyr7";
+
+var googleMatrixURL = "https://maps.googleapis.com/maps/api/distancematrix/json";
+var googleMatrixKey = "AIzaSyAstokUsAOqZ_lby6_PZnRqPA6t5sEwm4Y";
 // view engine 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -221,6 +224,41 @@ app.post('/', function(req, res){
 	else{
 		res.redirect('/');
 	}
+});
+
+app.get('/get/caretaker', function(req ,res){
+	var town = req.query.town;
+	var state = req.query.state;
+	var zip = req.query.zip;
+	var geoRequest = geoNamesURL+"?postalcode="+zip+"&country="+"USA&username="+geoNamesUser;
+	http.get(geoRequest, function(error, result){
+		if (error) {
+			console.error(error);
+			return;
+		}
+
+		var geoJson = JSON.parse(result.buffer.toString()).postalcodes[0];
+		var lat = geoJson.lat;
+		var lon = geoJson.lng;
+	
+		var query = "SELECT * FROM `caretaker` WHERE (`x_coord` < "+(lat+1)+" AND `x_coord` > "+(lat-1)+") AND (`y_coord` < "+(lon+1)+" AND `y_coord` > "+(lon-1)+");";
+		connection.query(query, function(err ,result){
+			if(err){
+				console.log(err.stack);
+				return;
+			}
+			console.log(query);
+			var googleQuery = googleMatrixURL+"?origins="+town+"+"+state+"+"+zip+"&key="+googleMatrixKey+"&destinations=";
+			for(var i = 0; i < result.length-1; i++){
+				googleQuery+=result[i].town+"+"+result[i].state+"+"+result[i].zip+"|";
+			}
+			var resultLength = result.length;
+			googleQuery+=result[resultLength-1].town+"+"+result[resultLength-1].state+"+"+result[resultLength-1].zip;
+			res.send(googleQuery);
+		});
+	});
+
+
 });
 
 var server = app.listen(3000, function(){
