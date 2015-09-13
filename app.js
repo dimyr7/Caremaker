@@ -98,8 +98,8 @@ app.get('/dashboard', function(req, res){
 	if(req.session && req.session.auth && req.session.auth.loggedIn){
 		var google_data = req.user.google;
 		//console.log(google_data);
-		var new_user_query = "SELECT * FROM caretaker WHERE `google_id`= ?";
-		connection.query(new_user_query, [google_data.id], function(err, result){
+		var new_user_query = "SELECT * FROM `caretaker` WHERE `google_id`= "+connection.escape(google_data.id)+";";
+		connection.query(new_user_query,function(err, result){
 			if(err){
 				console.log("error checking for new user: " + err.stack);
 			}
