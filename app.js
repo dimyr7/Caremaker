@@ -242,26 +242,39 @@ app.get('/get/caretaker', function(req ,res){
 		var lon = geoJson.lng;
 	
 		var query = "SELECT * FROM `caretaker` WHERE (`x_coord` < "+(lat+1)+" AND `x_coord` > "+(lat-1)+") AND (`y_coord` < "+(lon+1)+" AND `y_coord` > "+(lon-1)+");";
-		connection.query(query, function(err ,result){
+		connection.query(query, function(err ,result1){
 			if(err){
 				console.log(err.stack);
 				return;
 			}
-			console.log(query);
-			var googleQuery = googleMatrixURL+"?origins="+town+"+"+state+"+"+zip+"&key="+googleMatrixKey+"&destinations=";
-			for(var i = 0; i < result.length-1; i++){
-				googleQuery+=result[i].town+"+"+result[i].state+"+"+result[i].zip+"|";
+			var googleQuery = googleMatrixURL+"?units=imperial&origins="+town+"+"+state+"+"+zip+"&key="+googleMatrixKey+"&destinations=";
+			for(var i = 0; i < result1.length-1; i++){
+				googleQuery+=result1[i].town+"+"+result1[i].state+"+"+result1[i].zip+"|";
 			}
-			var resultLength = result.length;
-			googleQuery+=result[resultLength-1].town+"+"+result[resultLength-1].state+"+"+result[resultLength-1].zip;
-			res.send(googleQuery);
+			var resultLength = result1.length;
+			googleQuery+=result1[resultLength-1].town+"+"+result1[resultLength-1].state+"+"+result1[resultLength-1].zip;
+			http.get(googleQuery, function(error2, result2){
+				if(error2){
+					console.error(error2);
+					return;
+				}
+				var distance = JSON.parse(result2.buffer.toString());
+				console.log(distance.rows[0]);
+				//res.send(distance.rows[0].elements);
+				for(var i = 0; i < distance.rows[0].elements.length; i++){
+					result1[i].distance = distance.rows[0].elements[i].distance.text;
+					result1[i].value = distance.rows[0].elements[i].distance.value;
+				}
+				res.send(result1);
+							
+			});
 		});
 	});
 
 
 });
 
-var server = app.listen(3000, function(){
+var server = app.listen(80, function(){
 	var host = server.address().address;
 	var port = server.address().port;
 	console.log('Listening at http://%s:%s', host, port);
