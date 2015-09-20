@@ -1,28 +1,54 @@
 // set variables for environment
-var express = require('express');
-var path = require('path');
+var express = require('express'); // router for node.js
+var path = require('path'); 
 var http = require('http-request');
-var async = require('async');
 var request = require('request');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
-var mysql = require('mysql');
 var session = require('express-session');
-var everyauth = require('everyauth');
-var connection = require('./mysql.js').mysqlConnection();
-var gAuth = require('./googleAuth.js').googleAuth;
 var validator = require('express-validator');
 var util = require('util');
-console.log(gAuth);
-var x = gAuth();
+var credentials = require('./credentials.json');
+
+var geoNames = require('./geoNames.js');
+var connection = require('./mysql.js').mysqlConnection();
+
+
 // router creation
 var app = express();
 var router = express.Router();
-var geoNamesURL = "api.geonames.org/postalCodeLookupJSON";
-var geoNamesUser = "dimyr7";
 
+// google Matrix API
 var googleMatrixURL = "https://maps.googleapis.com/maps/api/distancematrix/json";
-var googleMatrixKey = "AIzaSyAstokUsAOqZ_lby6_PZnRqPA6t5sEwm4Y";
+var googleMatrixKey = credentials.googleMatrixKey;
+
+// google authenication
+var GOOGLE_CLIENT_ID =  credentials.googleClientID;
+var GOOGLE_CLIENT_SECRET = credentials.googleClientSecret;
+var GOOGLE_SCOPES = ['https://www.googleapis.com/auth/userinfo.profile'];
+
+var passport = require('passport');
+var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
+
+passport.use(new GoogleStrategy({
+		clientID: GOOGLE_CLIENT_ID,
+		clientSecret: GOOGLE_CLIENT_SECRET,
+		callbackURL: "/auth/google/callback"
+	},
+	function(accessToken, refreshToken, profile, done){
+		console.log("WHATTTT");
+		return done(null, profile);
+	})
+);
+
+passport.serializeUser(function(user, done) {
+	done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+	done(null, obj);
+});
+
 // view engine 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -30,16 +56,17 @@ app.set('view engine', 'ejs');
 // app config
 app.use(express.static(path.join(__dirname, 'public')))
 .use(session({secret: 'dima'}))
+.use(passport.initialize())
+.use(passport.session())
 .use(bodyParser.urlencoded({extended: false}))
 .use(bodyParser.json())
 .use(cookieParser())
-.use(everyauth.middleware())
-.use('/', router).
-use(validator({
+.use('/', router)
+.use(validator({
 	errorFormatter: function(param, msg, value) {
 		var namespace = param.split('.');
 		var root    = namespace.shift();
-		var  formParam = root;
+		var formParam = root;
 
 		while(namespace.length) {
 			formParam += '[' + namespace.shift() + ']';
@@ -52,80 +79,80 @@ use(validator({
 	}
 }));
 
+// router middleware
 router.use('/', function(req, res, next){
-	console.log('time: '+ Date.now());
-	
-
-	next();
+	console.log(req.isAuthenticated());
+	console.log(req.user);
+	if(req.isAuthenticated()){
+		next();
+	}
+	else if(req.path == "/"){
+		next();
+	}
+	else if(req.path == "/about"){
+		next();
+	}
+	else if(req.path == "/contact"){
+		next();
+	}
+	else if(req.path == "/login"){
+		next();
+	}
+	else if(req.path == '/auth/google'){
+		next();
+	}
+	else if(req.path == '/auth/google/callback'){
+		next();
+	}
+	else{
+		res.redirect('/login');
+	}
 });
 
 app.get('/', function(req, res){
-	if(req.session && req.session.auth && req.session.auth.loggedIn){
-		res.redirect('/dashboard');
+	if(req.isAuthenticated()){
+		res.render('index', {logged_in: true, user: req.user, current_header: 'home'});
 	}
 	else{
-		res.render('index', {logged_in: false, current: 'home'});
+		res.render('index', {logged_in: false, current_header: 'home'});
 	}
-	
-
-});
-
-app.get('/home', function(req, res){
-	res.redirect('/');
 });
 
 app.get('/about', function(req, res){
-	if(req.session && req.session.auth && req.session.auth.loggedIn){
-		res.render('about', {logged_in: true, google: req.user.google, current: 'about'});	
+	if(req.isAuthenticated()){
+		res.render('about', {logged_in: true, user: req.user, current_header: 'about'});	
 	}
 	else{
-		res.render('about', {logged_in:false, current: 'about'});
+		res.render('about', {logged_in:false, current_header: 'about'});
 	}
 });
+
 app.get('/contact', function(req, res){
-	if(req.session && req.session.auth && req.session.auth.loggedIn){
-		res.render('contact', {logged_in: true, google: req.user.google, current: 'contant'});	
+	if(req.isAuthenticated()){
+		res.render('contact', {logged_in: true, user: req.user, current_header: 'contact'});	
 	}
 	else{
-		res.render('contact', {logged_in:false, current: 'contant'});
+		res.render('contact', {logged_in:false, current_header: 'contact'});
 	}
 });
 
+app.get('/login', function(req, res){
+	if(req.isAuthenticated()){
+		res.redirect('/dashboard');
+	}
+	res.render('login', {logged_in: false, current_header: 'user'});
+
+});
 app.get('/dashboard', function(req, res){
-	//console.log(req.session);
-	//console.log(req.session.auth);
-	//console.log(req.session.auth.loggedIn);
-	if(req.session && req.session.auth && req.session.auth.loggedIn){
-		var google_data = req.user.google;
-		//console.log(google_data);
-		var new_user_query = "SELECT * FROM `caretaker` WHERE `google_id`= "+connection.escape(google_data.id)+";";
-		connection.query(new_user_query,function(err, result){
-			if(err){
-				console.log("error checking for new user: " + err.stack);
-			}
-			if(result.length === 0){ // new user
-				console.log(result);
-				console.log('wow');
-				res.redirect('new_user');	
-			}
-			else{
-				res.render('dashboard', {logged_in:false, current: 'contant', google: google_data});
-			}
-		});
-	}
-	else{
-		res.redirect('/');
-	}
+	
+	res.render('dashboard', {logged_in:true, user: req.user, current_header: 'user'});
 });
 
-app.get('/new_user', function(req, res){
-	if(req.session && req.session.auth && req.session.auth.loggedIn){
-		res.render('new_user', {google: req.user.google, errors: []});
-	}
-	else{
-		res.redirect('/');
-	}
+app.get('/auth/google/callback', passport.authenticate('google', {failureRedirect: '/login'}), function(req, res){
+	res.redirect('/dashboard');
 });
+app.get('/auth/google', passport.authenticate('google', { scope: GOOGLE_SCOPES}));
+
 
 app.post('/', function(req, res){
 	if(req.session && req.session.auth && req.session.auth.loggedIn){
@@ -172,8 +199,7 @@ app.post('/', function(req, res){
 		var bio = connection.escape(req.body.bio);
 		var price = connection.escape(req.body.price);
 		var pets = (req.body.pets) ? 1 : 0;
-		var getRequest = geoNamesURL+"?postalcode="+zip+"&country=USA&username="+geoNamesUser;
-		var pic_url = connection.escape(req.user.google.picture);
+				var pic_url = connection.escape(req.user.google.picture);
 		//console.log(getRequest);
 		http.get(getRequest, function(error, result){
 			if (error) {
@@ -230,16 +256,10 @@ app.get('/get/caretaker', function(req ,res){
 	var town = req.query.town;
 	var state = req.query.state;
 	var zip = req.query.zip;
-	var geoRequest = geoNamesURL+"?postalcode="+zip+"&country="+"USA&username="+geoNamesUser;
-	http.get(geoRequest, function(error, result){
-		if (error) {
-			console.error(error);
-			return;
-		}
+	geoNames.getRequest(zip, 'USA', function(res){	
 
-		var geoJson = JSON.parse(result.buffer.toString()).postalcodes[0];
-		var lat = geoJson.lat;
-		var lon = geoJson.lng;
+		var lat = res.lat;
+		var lon = res.lng;
 	
 		var query = "SELECT * FROM `caretaker` WHERE (`x_coord` < "+(lat+1)+" AND `x_coord` > "+(lat-1)+") AND (`y_coord` < "+(lon+1)+" AND `y_coord` > "+(lon-1)+");";
 		connection.query(query, function(err ,result1){
@@ -255,6 +275,7 @@ app.get('/get/caretaker', function(req ,res){
 			googleQuery+=result1[resultLength-1].town+"+"+result1[resultLength-1].state+"+"+result1[resultLength-1].zip;
 			http.get(googleQuery, function(error2, result2){
 				if(error2){
+
 					console.error(error2);
 					return;
 				}
@@ -286,34 +307,30 @@ app.post('/post/customer', function(req, res){
 	var pic_url = connection.escape(req.body.pic);
 	var email = connection.escape(req.body.email);
 	var google_id = connection.escape(req.body.google);
-
-	var getRequest = geoNamesURL+"?postalcode="+zip+"&country=USA&usename="+geoNamesUser;
-	http.get(getRequest, function(error, result){
-		if(error){
-			console.log(error);
-			return;
-		}
-		var geoJson = JSON.parse(result.buffer.toString()).postalcodes[0];
-		var lat = geoJson.lat;
-		var lon = geoJson.lng;
-		
+	var geoNamesInfo = geoNames.getRequest(zip, 'USA', function(res){
+	var lat = res.lat;
+		var lon = res.lng;
+	
 		var query = "INSERT INTO `customer` (`first_name`, `last_name`, `age`, `town`, `state`, `zip`, `x_coord`, `y_coord`, `language`, `gender`, `profile_pic`, `email`, `google_id`) VALUES ";
 		var midquery = "("+firstName+", "+lastName+","+age+", "+town+","+state+","+zip+","+lat+","+lon+","+language+","+gender+","+pic_url+","+email+","+google_id+");";
 
-		connection.query(query+midquery, function(err2){
-			if(err2){
-				console.log(err2.stack);
+		connection.query(query+midquery, function(err){
+			if(err){
+				console.log(err.stack);
 				return;
 			}
 			res.status(200).send('Yo bitch');
 		});
-
-
 	});
+
+				
+		
+
+
 
 });
 
-var server = app.listen(80, function(){
+var server = app.listen(3000, function(){
 	var host = server.address().address;
 	var port = server.address().port;
 	console.log('Listening at http://%s:%s', host, port);

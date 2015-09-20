@@ -1,6 +1,7 @@
 module.exports = {
 	mysqlConnection: function(){
 		var mysql = require('mysql');
+		
 		// connection
 		var connection = mysql.createConnection({
 			host: 'localhost',
@@ -9,6 +10,7 @@ module.exports = {
 			password: 'dev_pass',
 			multipleStatements: true
 		});
+
 		// connection test
 		connection.connect(function(err){
 			if(err){

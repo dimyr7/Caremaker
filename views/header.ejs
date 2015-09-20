@@ -10,32 +10,42 @@
 						<span class="icon-bar"></span>
 						<span class="icon-bar"></span>
 					</button>
-					<a class="navbar-brand" href="/home">Caremaker</a>
+					<a class="navbar-brand" href="/">Caremaker</a>
 				</div>
 
 				<!-- Collect the nav links, forms, and other content for toggling -->
 				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 					<ul class="nav navbar-nav">
-						<li <% if(current == 'home') { %>
+						<li <% if(current_header == 'home') { %>
 						<%= 'class=active' %> 
 						<% } %>
-						><a href="/">Home <span class="sr-only">(current)</span></a></li>
-						<li <% if(current == 'about') { %>
+						><a href="/">Home <span class="sr-only">(current_header)</span></a></li>
+						<li <% if(current_header == 'about') { %>
 						<%= 'class=active' %>
 						<% } %> ><a href="/about">About Us</a></li>
 
 					</ul>
 					
 					<ul class="nav navbar-nav navbar-right">
-						<li <% if(current == 'contant') { %>
+						<li <% if(current_header == 'contact') { %>
 						<%= 'class=active' %>
-						<% } %> 
-						><a href="/contact">Contact</a></li>
-						<% if(logged_in) {%>
-						 <li><a href="/dashboard">Welcome <%= google.name %></a></li>
+						<% } %> >
+							<a href="/contact">Contact</a>
+						</li>
+
+
+						<li <% if(current_header == 'user') {%>
+						<%= 'class=active' %>
+						<% } %> >
+
+						<a href= <% if(logged_in) { %>
+							<%= '/dashboard' %> > Welcome <%= user.displayName %> </a>
 						<% } else { %>
-							<li><a href="/auth/google"> Log In </a></li>
-						<% }%>
+							<%= '/login' %> > Login </a>
+						<% } %> 
+						</li>
+
+
 					</ul>
 				</div><!-- /.navbar-collapse -->
 			</div><!-- /.container-fluid -->
